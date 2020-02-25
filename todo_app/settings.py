@@ -135,6 +135,6 @@ DATABASES['default'].update(db_from_env)
 DEBUG = False
 
 try:
-    from . import local_settings
+    from .local_settings import *
 except ImportError:
     pass
