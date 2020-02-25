@@ -2,4 +2,4 @@
 *~
 __pycache__
 /static
-local_settings.py
+/todo_app/local_settings.py
