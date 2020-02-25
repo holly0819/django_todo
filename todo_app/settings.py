@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 import dj_database_url
+import socket
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -117,22 +118,27 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-DEBUG = True
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'django_todo_db',
+        'USER': 'django_todo_admin',
+        'PASSWORD': 'password',
+        'HOST': 'localhost',
+        'POST': '5432',
+    }
+}
+
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
+if socket.gethostname() == '.herokuapp.com':
+    DEBUG = False
+else:
+    DEBUG = True
+
+
 try:
     from . import local_settings
 except ImportError:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'django_todo_db',
-            'USER': 'django_todo_admin',
-            'PASSWORD': 'password',
-            'HOST': 'localhost',
-            'POST': '5432',
-        }
-    }
-
-    DEBUG = False
-
-    db_from_env = dj_database_url.config(conn_max_age=500)
-    DATABASES['default'].update(db_from_env)
+    pass
