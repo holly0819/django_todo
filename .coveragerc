@@ -1,0 +1,6 @@
+[run]
+source = .
+omit = */tests/*
+
+[html]
+directory = cover

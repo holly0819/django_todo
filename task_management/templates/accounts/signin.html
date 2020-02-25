@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}ログイン | {% endblock %}
+
+{% block content %}
+  <form action="{% url 'signin' %}" method="POST">
+    {% csrf_token %}
+    {{ form.username.label_tag }}
+    {{ form.username }}
+    {{ form.password.label_tag }}
+    {{ form.password }}
+
+    <input type="submit" value="ログイン">
+  </form>
+
+  {% if form.errors %}
+      {{ form.non_field_errors }}
+  {% endif %}
+{% endblock %}

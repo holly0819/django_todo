@@ -6,5 +6,11 @@
   <link rel="stylesheet" type="text/css" href="{% static 'task_management/style.css' %}">
 </head>
 <body>
+  <header>
+    {% if user.is_authenticated %}
+      <p>Hello {{ user }}</p>
+    {% endif %}
+  </header>
+
   {% block content %}{% endblock %}
 </html>
