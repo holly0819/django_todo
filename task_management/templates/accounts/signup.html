@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <!-- signup処理部分 -->
+  <form method="post" action="{% url 'signup' %}">
+    {% csrf_token %}
+    {{ form.username.label_tag }}
+    {{ form.username }}
+    {{ form.email.label_tag }}
+    {{ form.email }}
+    {{ form.password1.label_tag }}
+    {{ form.password1 }}
+    {{ form.password2.label_tag }}
+    {{ form.password2 }}
+
+    <input type="submit" value="登録">
+    
+    <!-- エラーメッセージを表示 -->
+
+    {% if form.errors %}
+      {% for field in form %}
+        {% for error in field.errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      {% endfor %}
+    {% endif %}
+
+  </form>
+
+{% endblock %}

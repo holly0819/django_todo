@@ -1,5 +1,6 @@
 import os
 
+DBEUG = True
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 DATABASES = {
@@ -12,5 +13,3 @@ DATABASES = {
         'POST': '5432',
     }
 }
-
-DBEUG = True

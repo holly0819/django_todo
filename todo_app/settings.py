@@ -21,10 +21,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'soa1!h%oyrxi09%lusxo_#oo2l%zx2dld(g#j$^s^()5184p&t'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
 
 ALLOWED_HOSTS = ['192.168.33.15', '.herokuapp.com']
 
@@ -76,16 +75,7 @@ WSGI_APPLICATION = 'todo_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'django_todo_db',
-        'USER': 'django_todo_admin',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
-        'POST': '5432',
-    }
-}
+
 
 
 # Password validation
@@ -127,5 +117,22 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES['default'].update(db_from_env)
+DEBUG = True
+try:
+    from . import local_settings
+except ImportError:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'django_todo_db',
+            'USER': 'django_todo_admin',
+            'PASSWORD': 'password',
+            'HOST': 'localhost',
+            'POST': '5432',
+        }
+    }
+
+    DEBUG = False
+
+    db_from_env = dj_database_url.config(conn_max_age=500)
+    DATABASES['default'].update(db_from_env)
