@@ -2,6 +2,7 @@ import os
 
 DBEUG = True
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+raise
 
 DATABASES = {
     'default': {

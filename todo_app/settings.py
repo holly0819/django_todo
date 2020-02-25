@@ -132,11 +132,7 @@ DATABASES = {
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(db_from_env)
 
-if socket.gethostname() == 'bbaa1152-b823-4897-93dc-2b84e645ff0d':
-    DEBUG = False
-else:
-    DEBUG = True
-
+DEBUG = False
 
 try:
     from . import local_settings
