@@ -149,7 +149,6 @@ class TaskListTests(StaticLiveServerTestCase):
     self.assertEqual(len(new_list), 1)
 
     # 追加したリストのタスク一覧画面が存在するか検証する
-    self.selenium.save_screenshot('test_images/after_add.png')
     list_id = new_list[0].find_element_by_xpath('./..').get_attribute("data-list-id")
     new_tasks_list_xpath =\
        "//*[@id='task-list']/*[@class='tasks'][@data-list-id='list-%s']" % str(list_id)
@@ -160,6 +159,13 @@ class TaskListTests(StaticLiveServerTestCase):
     new_tasks_title = self.selenium.find_elements_by_xpath(new_tasks_title_xpath)
     self.assertEqual(len(new_tasks_title), 1)
 
+    # 作ったリストが、タスク追加フォームのリスト一覧にも追加されているか検証する
+    list_select_tag_xpath =\
+      "//*[@id='add_task_for_list']/option[@value=%s]" % str(list_id)
+    list_select_tags =\
+      self.selenium.find_elements_by_xpath(list_select_tag_xpath)
+    self.assertEqual(len(list_select_tags), 1)
+
     # リロード後も維持されているか検証する
     self.selenium.refresh()
     new_list = self.selenium.find_elements_by_xpath(new_list_xpath)
@@ -168,6 +174,9 @@ class TaskListTests(StaticLiveServerTestCase):
     self.assertEqual(len(new_tasks_title), 1)
     new_tasks_list = self.selenium.find_elements_by_xpath(new_tasks_list_xpath)
     self.assertEqual(len(new_tasks_list), 1)
+    list_select_tags =\
+      self.selenium.find_elements_by_xpath(list_select_tag_xpath)
+    self.assertEqual(len(list_select_tags), 1)
 
   def test_remove_list(self):
     for i in range(5):
@@ -176,13 +185,28 @@ class TaskListTests(StaticLiveServerTestCase):
     self.login()
 
     # リストを削除する
-    target_list = self.selenium.find_element_by_xpath(
-                    "//*[@id='lists']/*[contains(@class, 'list')][2]")
+    target_list_xpath = "//*[@id='lists']/*[contains(@class, 'list')][2]"
+    target_list = self.selenium.find_element_by_xpath(target_list_xpath)
     target_name = target_list.find_element_by_xpath(
                     "./*[@class='list-name']").text
     remove_button = target_list.find_element_by_xpath(
                       "./*[@class='list-edit-buttons']\
                         /*[contains(@class, 'remove-list-button')]")
+    target_id = target_list.get_attribute('data-list-id')
+
+    # リスト一覧から削除する
+    removed_list_xpath = "//*[@id='lists']/li/span[@class='list-name'][text()='%s']" % target_name
+    removed_list = self.selenium.find_elements_by_xpath(removed_list_xpath)
+  
+    # タスク追加フォームにあるリスト一覧からも削除する
+    list_select_tags_xpath = "//*[@id='add_task_for_list']/option[@value=%s]" % str(target_id)
+    list_select_tags = self.selenium.find_elements_by_xpath(list_select_tags_xpath)
+
+    # まだ削除する要素が存在しているか検証する
+    self.assertEqual(len(removed_list), 1)
+    self.assertEqual(len(list_select_tags), 1)
+
+    # 削除を実行する
     action = ActionChains(self.selenium)
     action.move_to_element(target_list)\
           .move_to_element(remove_button).click().perform()
@@ -191,17 +215,19 @@ class TaskListTests(StaticLiveServerTestCase):
     sleep(3) # アニメーション完了待ち
 
     # 削除されたリストが消えたか検証する
-    target_list = self.selenium.find_elements_by_xpath(
-      "//*[@id='lists']/li/span[@class='list-name'][text()='%s']" % target_name
-    )
-    self.assertEqual(len(target_list), 0)
+    removed_list = self.selenium.find_elements_by_xpath(removed_list_xpath)
+    self.assertEqual(len(removed_list), 0)
+
+    # タスク追加フォームのリスト一覧から削除されたか検証する
+    list_select_tags = self.selenium.find_elements_by_xpath(list_select_tags_xpath)
+    self.assertEqual(len(list_select_tags), 0)
 
     # リロードしても消えたままか確認する
     self.selenium.refresh()
-    target_list = self.selenium.find_elements_by_xpath(
-      "//*[@id='lists']/li/span[@class='list-name'][text()='%s']" % target_name
-    )
-    self.assertEqual(len(target_list), 0)
+    removed_list = self.selenium.find_elements_by_xpath(removed_list_xpath)
+    self.assertEqual(len(removed_list), 0)
+    list_select_tags = self.selenium.find_elements_by_xpath(list_select_tags_xpath)
+    self.assertEqual(len(list_select_tags), 0)
 
   def test_edit_list(self):
     for i in range(5):
@@ -214,8 +240,31 @@ class TaskListTests(StaticLiveServerTestCase):
       "//ul[@id='lists']/li[3]")
     before_name = target_list.find_element_by_xpath(
       "./*[@class='list-name']").text
+    after_name = '新しい名前'
     edit_button = target_list.find_element_by_xpath(
       "./*[@class='list-edit-buttons']/*[contains(@class, 'edit-list-button')]")
+
+    before_list_xpath =\
+      "//ul[@id='lists']/li/*[@class='list-name'][text()='%s']" % before_name
+    after_list_xpath =\
+      "//ul[@id='lists']/li/*[@class='list-name'][text()='%s']" % after_name
+    before_list_select_tags_xpath =\
+      "//select[@id='add_task_for_list']/option[text()='%s']" % before_name
+    after_list_select_tags_xpath =\
+      "//select[@id='add_task_for_list']/option[text()='%s']" % after_name
+
+    # 変更前の状態であることを検証する
+    before_list = self.selenium.find_elements_by_xpath(before_list_xpath)
+    after_list = self.selenium.find_elements_by_xpath(after_list_xpath)
+    before_list_select_tags =\
+      self.selenium.find_elements_by_xpath(before_list_select_tags_xpath)
+    after_list_select_tags =\
+      self.selenium.find_elements_by_xpath(after_list_select_tags_xpath)
+
+    self.assertEqual(len(before_list), 1)
+    self.assertEqual(len(after_list), 0)
+    self.assertEqual(len(before_list_select_tags), 1)
+    self.assertEqual(len(after_list_select_tags), 0)
 
     action = ActionChains(self.selenium)
     action.move_to_element(target_list)\
@@ -224,33 +273,42 @@ class TaskListTests(StaticLiveServerTestCase):
     sleep(1)
 
     self.selenium.save_screenshot('test_images/test.png')
-    # 編集モーダルの名前フィールドがないので、原因を探ろう
     input_field = self.selenium.find_element_by_xpath(
       "//*[@id='edit-list-modal']//input[@id='edit_list_for_name']")
     input_field.clear()
-    input_field.send_keys('新しい名前')
+    input_field.send_keys(after_name)
 
     self.selenium.find_element_by_xpath(
       "//*[@id='edit-list-modal']//button[@form='edit-list-form']").click()
     sleep(3)
+
     # リスト名が変わっているか検証する
-    before_list = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li/*[@class='list-name'][text()='%s']" % before_name)
-    after_list = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li/*[@class='list-name'][text()='新しい名前']")
+    before_list = self.selenium.find_elements_by_xpath(before_list_xpath)
+    after_list = self.selenium.find_elements_by_xpath(after_list_xpath)
+    before_list_select_tags =\
+      self.selenium.find_elements_by_xpath(before_list_select_tags_xpath)
+    after_list_select_tags =\
+      self.selenium.find_elements_by_xpath(after_list_select_tags_xpath)
 
     self.assertEqual(len(before_list), 0)
     self.assertEqual(len(after_list), 1)
+    self.assertEqual(len(before_list_select_tags), 0)
+    self.assertEqual(len(after_list_select_tags), 1)
 
     # リロードしても変更後のままか検証する
     self.selenium.refresh()
-    before_list = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li/*[@class='list-name'][text()='%s']" % before_name)
-    after_list = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li/*[@class='list-name'][text()='新しい名前']")
+
+    before_list = self.selenium.find_elements_by_xpath(before_list_xpath)
+    after_list = self.selenium.find_elements_by_xpath(after_list_xpath)
+    before_list_select_tags =\
+      self.selenium.find_elements_by_xpath(before_list_select_tags_xpath)
+    after_list_select_tags =\
+      self.selenium.find_elements_by_xpath(after_list_select_tags_xpath)
 
     self.assertEqual(len(before_list), 0)
     self.assertEqual(len(after_list), 1)
+    self.assertEqual(len(before_list_select_tags), 0)
+    self.assertEqual(len(after_list_select_tags), 1)
 
   def test_switch_lists(self):
     for i in range(1, 6):
@@ -258,28 +316,40 @@ class TaskListTests(StaticLiveServerTestCase):
 
     self.login()
 
+    before_lists_xpath = "//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 1']"
+    after_lists_xpath = "//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 3']"
+    before_selected_tag_xpath = "//select[@id='add_task_for_list']/option[text()='List 1']"
+    after_selected_tag_xpath = "//select[@id='add_task_for_list']/option[text()='List 3']"
+
     # Cookieにinitial_list_idがない場合、pkを昇順に並べて一番最初のリストが自動でフォーカスされる
     lists = self.selenium.find_elements_by_xpath(
       "//ul[@id='lists']/li[contains(@class, 'focus')\
                             and contains(@class, 'list')]/span[text()='List 1']")
     self.assertEqual(len(lists), 1)
 
+    # タスク追加フォームのリスト選択では、List 1のリストが最初から選択されている
+    before_select_tag = self.selenium.find_element_by_xpath(before_selected_tag_xpath)
+    self.assertTrue(before_select_tag.is_selected())
+
     # クリックされたリストがフォーカスされる（上から3番目）
     self.selenium.find_element_by_xpath(
       "//ul[@id='lists']/li[contains(@class, 'list')][3]").click()
-    before_lists = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 1']")
-    after_lists = self.selenium.find_elements_by_xpath(
-      "//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 3']")
+    before_lists = self.selenium.find_elements_by_xpath(before_lists_xpath)
+    after_lists = self.selenium.find_elements_by_xpath(after_lists_xpath)
+    after_select_tag = self.selenium.find_element_by_xpath(after_selected_tag_xpath)
     self.assertEqual(len(before_lists), 0)
     self.assertEqual(len(after_lists), 1)
+    self.assertTrue(after_select_tag.is_selected)
 
     # 更新後もフォーカスが維持されている
     self.selenium.refresh()
-    before_lists = self.selenium.find_elements_by_xpath("//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 1']")
-    after_lists = self.selenium.find_elements_by_xpath("//ul[@id='lists']/li[contains(@class, 'focus')]/span[text()='List 3']")
+    before_lists = self.selenium.find_elements_by_xpath(before_lists_xpath)
+    after_lists = self.selenium.find_elements_by_xpath(after_lists_xpath)
+    after_select_tag = self.selenium.find_element_by_xpath(after_selected_tag_xpath)
     self.assertEqual(len(before_lists), 0)
     self.assertEqual(len(after_lists), 1)
+    self.assertTrue(after_select_tag.is_selected)
+
 
   def test_switch_lists_when_remove_bottom_focused_list(self):
     for i in range(1,6):

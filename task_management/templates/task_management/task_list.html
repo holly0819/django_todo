@@ -55,8 +55,14 @@
           $(data['list_item']).appendTo("ul#lists").hide().fadeIn();
           $("form#add-list-form").html(data['list_form']);
 
-          // タスク一覧を付け加える
+          // タスク一覧を付け加え、切り替える
           $(data['each_list']).appendTo("#task-list")
+          
+          // タスク追加フォームのリスト一覧に付け加える
+          $('select#add_task_for_list').append(
+            `<option value="${data['list_id']}">${data['list_name']}</option>`
+          )
+
           switchList(data['list_id'])
         }).fail(function() {
           alert('タスク追加に失敗しました。しばらく経ってからもう一度お試しください。')
@@ -75,7 +81,7 @@
 
       // リストの編集ボタンを押すと、モーダルのaction、inputの初期値が合わせて変化する
       $('#lists').on('click', '.edit-list-button', function(event) {
-        // イベントの伝播を防ぐ
+        // 編集ボタンを押しても、リストの切り替えは起こらないようにする（イベントの伝播を防ぐ）
         event.stopPropagation();
         $('#edit-list-modal').modal('show')
 
@@ -106,6 +112,9 @@
           let pk = data.pk;
           let list = $(`li.list[data-list-id='${pk}']`)
           list.find('.list-name').text(name).hide().fadeIn();
+          //タスク追加フォームのリスト一覧も変える
+          $(`select#add_task_for_list option[value='${pk}']`).text(name)
+
           // フォーカス中のリストを更新した場合、タスク一覧画面のタイトルも更新する
           if(list.hasClass('focus')) {
             $('#task-list h2').text(name);
@@ -115,7 +124,7 @@
 
       // リストの削除ボタンを押すと、モーダルのaction、inputの初期値が合わせて変化する
       $('#lists').on('click', '.remove-list-button', function(event) {
-        // イベントの伝播を防ぐ
+        // 削除ボタンを押しても、リストの切り替えは起こらないようにする（イベントの伝播を防ぐ）
         event.stopPropagation();
         $('#remove-list-modal').modal('show')
 
@@ -162,10 +171,13 @@
           target_list.animate(
             {'opacity':'0'}
           ).slideUp(function() { $(this).remove(); });
+
+          // タスク追加フォームのリスト一覧から削除する
+          $(`select#add_task_for_list option[value=${pk}]`).remove()
         })
       })
 
-      // cookieのinitial_list_idのリストか、最初に作ったリストを表示する
+      // 読み込み時,cookieのinitial_list_idのリストか、最初に作ったリストを表示する
       switchList('{{ initial_list_id }}')
       // リストの切り替え
       $('#lists').on('click', '.list', function() {
@@ -185,13 +197,23 @@
     })
     // タスク一覧の切り替え方 リスト名をタップ、リストを追加、現在フォーカスしているリストを削除、
     let switchList = function(list_id) {
+      // タスク一覧を表示する
       $('#task-list .tasks').hide();
       $(`#task-list .tasks[data-list-id='list-${list_id}']`).show();
-      $('#lists .list').not(`[data-list-id=${list_id}]`).removeClass('focus');
+      
+      // タスク一覧のタイトルを変更する
       let list = $(`#lists .list[data-list-id=${list_id}]`);
-      list.addClass('focus');
       let name = list.find('span.list-name').text();
       $('#task-list h2').text(name);
+
+      // リストをフォーカスする
+      $('#lists .list').not(`[data-list-id=${list_id}]`).removeClass('focus');
+      list.addClass('focus');
+
+      // タスク追加フォームのリスト一覧は、切り替えたリストを初期値にする
+      $('select#add_task_for_list').val(list_id)
+      // 追加したリストでタスクを作成しようとすると、初期値が変更されていない
+      // 次回訪問時用に、選択したリストのidをcookieに保存する
       document.cookie = `initial_list_id=${list_id}`
     }
 
@@ -212,7 +234,7 @@
 
     // cookie情報を取得
     // sourcecode: https://docs.djangoproject.com/ja/3.0/ref/csrf/#ajax
-    function getCookie(name) {
+    let getCookie = function(name) {
       var cookieValue = null;
       if (document.cookie && document.cookie !== '') {
         var cookies = document.cookie.split(';');
@@ -227,5 +249,6 @@
       }
       return cookieValue;
     }
+
   </script>
 {% endblock %}

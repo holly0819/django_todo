@@ -85,7 +85,8 @@ def AddList(request):
   else:
     return HttpResponse(status=400)
   data = {'list_item':list_item, 'list_form':list_form,
-          'each_list':each_list, 'list_id': list.id}
+          'each_list':each_list, 'list_id': list.id,
+          'list_name': list.name}
   return JsonResponse(data)
 
 @login_required

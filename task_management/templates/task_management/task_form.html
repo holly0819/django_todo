@@ -1,5 +1,6 @@
 {{ add_task_form.non_field_errors }}
 <div class="fieldWrapper">
+  {% csrf_token %}
   {{ form.subject.errors }}
   {{ form.name.label }}
   {{ form.name }}
