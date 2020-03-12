@@ -1,0 +1,21 @@
+<!-- リスト編集のモーダル -->
+<div class="modal fade" id="edit-list-modal" tabindex="-1" role="dialog" aria-labelledby="edit-list-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="edit-list-modal-label">リストを編集</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-list-form" action="{% url 'edit_list' 77777 %}" method="post">
+          {% include 'task_management/list_form.html' with form=form %}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" form="edit-list-form">保存</button>
+      </div>
+    </div>
+  </div>
+</div>

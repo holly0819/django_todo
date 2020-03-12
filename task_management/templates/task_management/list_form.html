@@ -1,0 +1,6 @@
+{% for field in form %}
+  {% csrf_token %}
+  {{ field.label }}
+  {{ field }}
+  {{ field.errors }}
+{% endfor %}

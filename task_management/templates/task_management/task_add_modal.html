@@ -1,0 +1,24 @@
+<!-- タスク追加のモーダル -->
+<button type="button" id="add-task-button" data-toggle="modal" 
+        data-target="#add-task-modal">タスクを追加する</button>
+<div class="modal fade" id="add-task-modal" tabindex='-1' role="dialog" 
+      aria-lablledby="add-task-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="add-task-modal-label">タスクを追加</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="add-task-form" action="{% url 'add_task' %}" method="post">
+            {% include 'task_management/task_form.html' with form=form %}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" form="add-task-form">タスクを追加</button>
+      </div>
+    </div>
+  </div>
+</div>

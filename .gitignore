@@ -3,3 +3,4 @@
 __pycache__
 /static
 local_settings.py
+/test_images

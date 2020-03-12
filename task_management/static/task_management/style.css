@@ -1,3 +1,64 @@
 form input {
   display: block;
 }
+
+#main {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+#main main {
+  flex: 1
+}
+
+#main aside {
+  width: 300px;
+}
+
+#hamburger-menu-button {
+  display: none;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+/* タスク */
+
+#task-list .tasks {
+  display: none;
+}
+
+/* -タスク */
+
+
+/* リスト */
+
+#lists .list {
+  display: flex;
+  padding: 5px 0px;
+  cursor: pointer;
+  background-color: white;
+}
+
+#lists .list .list-name {
+  flex: 1;
+}
+
+#lists .list .list-edit-buttons {
+  display: none;
+}
+#lists .list .list-edit-buttons.active {
+  display: inline;
+}
+#lists .list .list-edit-buttons * {
+  padding: 2px;
+  color: gray;
+  cursor: pointer;
+}
+#lists .list .list-edit-buttons *:hover {
+  color: inherit;
+  cursor: pointer;
+}
+#lists .list.focus {
+  background-color: lightgray;
+}
+/* -リスト */

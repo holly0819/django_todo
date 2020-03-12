@@ -1,7 +1,231 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Taskal{% endblock %}
-
+{% block listtitle %}{% endblock %}
 {% block content %}
+  <div id="main" class="container">
+    <main id="task-list">
+      <h2>リストの名前</h2>
+      <!-- タスク追加のモーダル -->
+      <!-- each_list.htmlの名前を変えるところから -->
+      {% include 'task_management/task_add_modal.html' with form=add_task_form %}
+      {% for list in lists %}
+        {% include 'task_management/tasks_each_list.html' with list=list %}
+      {% endfor %}
+    </main>
+    <aside>
+      <!-- リスト追加のモーダル -->
+      {% include 'task_management/list_add_modal.html' with form=add_list_form %}
+      <!-- 各リスト -->
+      <ul id="lists">
+        {% for list in lists %}
+          {% include 'task_management/list.html' with list=list %}
+        {% endfor %}
+      </ul>
+      {% include 'task_management/list_edit_modal.html' with form=edit_list_form %}
+      {% include 'task_management/list_remove_modal.html' %}
+    </aside>
+  </div>
+{% endblock %}
 
+{% block extrajs %}
+  <script>
+    // リストの追加・編集・削除のAjax通信
+    // リストの追加・編集・削除用モーダルを開いたときに属性を編集する
+    // リストを並び替えた時のAjax通信
+
+    $(function() {
+      // リスト追加時のajax通信
+      $('form#add-list-form').submit(function(event) {
+        event.preventDefault();
+        let form = $(this);
+        $.ajax({
+          url: form.prop('action'),
+          method: form.prop('method'),
+          data: form.serialize(),
+          timeout: 10000,
+          dataType: 'json',
+        })
+        .done(function(data) {
+          // モーダルを閉じる
+          $('#add-list-modal').modal('hide');
+
+          // リスト一覧とフォームを直す
+          $(data['list_item']).appendTo("ul#lists").hide().fadeIn();
+          $("form#add-list-form").html(data['list_form']);
+
+          // タスク一覧を付け加える
+          $(data['each_list']).appendTo("#task-list")
+          switchList(data['list_id'])
+        }).fail(function() {
+          alert('タスク追加に失敗しました。しばらく経ってからもう一度お試しください。')
+        })
+      })
+
+      // マウスホバーしたリストに編集・削除ボタンを表示する
+      $('#lists').on({
+        'mouseenter': function() {
+          $(this).find('span.list-edit-buttons').addClass('active');
+        },
+        'mouseleave': function() {
+          $(this).find('span.list-edit-buttons').removeClass('active');
+        }
+      }, 'li.list');
+
+      // リストの編集ボタンを押すと、モーダルのaction、inputの初期値が合わせて変化する
+      $('#lists').on('click', '.edit-list-button', function(event) {
+        // イベントの伝播を防ぐ
+        event.stopPropagation();
+        $('#edit-list-modal').modal('show')
+
+        let pk = $(this).parents('.list').data('list-id');
+        let url = "{% url 'edit_list' 77777 %}".replace(/77777/, pk);
+        let value = $(this).parents('.list').find('.list-name').text()
+        $('#edit-list-form').attr('action', url)
+        $('#edit-list-form input#edit_list_for_name').val(value)
+      });
+
+      // リスト編集時のajax通信
+      $('form#edit-list-form').submit(function(event) {
+        event.preventDefault();
+        let form = $(this);
+        $.ajax({
+          url: form.prop('action'),
+          method: form.prop('method'),
+          data: form.serialize(),
+          timeout: 10000,
+          dataType: 'json',
+        })
+        .done(function(data) {
+          // モーダルを閉じる
+          $('#edit-list-modal').modal('hide');
+
+          // リストの名前を変える
+          let name = data.name
+          let pk = data.pk;
+          let list = $(`li.list[data-list-id='${pk}']`)
+          list.find('.list-name').text(name).hide().fadeIn();
+          // フォーカス中のリストを更新した場合、タスク一覧画面のタイトルも更新する
+          if(list.hasClass('focus')) {
+            $('#task-list h2').text(name);
+          };
+        });
+      })
+
+      // リストの削除ボタンを押すと、モーダルのaction、inputの初期値が合わせて変化する
+      $('#lists').on('click', '.remove-list-button', function(event) {
+        // イベントの伝播を防ぐ
+        event.stopPropagation();
+        $('#remove-list-modal').modal('show')
+
+        let pk = $(this).parents('.list').data('list-id');
+        let url = "{% url 'remove_list' 77777 %}".replace(/77777/, pk);
+        let value = $(this).parents('.list').find('.list-name').text();
+
+        $('#remove-list-form').attr('action', url);
+        $('#remove-list-modal').find('.remove-list-name').text(value);
+      });
+
+      // リスト削除のajax通信
+      $('#remove-list-form').submit(function(event) {
+        event.preventDefault();
+        let form = $(this)
+        $.ajax({
+          url: form.prop('action'),
+          method: form.prop('method'),
+          data: form.serialize(),
+          timeout: 10000,
+          dataType: 'text',
+        })
+        .done(function(pk) {
+          // モーダルを閉じる
+          $('#remove-list-modal').modal('hide');
+
+          // タスク画面の削除
+          let target_list = $(`#lists .list[data-list-id="${pk}"]`);
+          $(`#task-list .tasks[data-list-id="list-${pk}"]`).remove();
+
+          // リストが2個以上（削除するリストも含める）の場合、タスク画面の切り替えを行う
+          if(target_list.hasClass('focus') && $('#lists').find('.list').length > 1) {
+            let index = $('#lists .list').index(target_list)
+            if(index == 0) {
+              let list_id = $('#lists .list').eq(index + 1).data('list-id');
+              switchList(list_id)
+            } else {
+              let list_id = $('#lists .list').eq(index - 1).data('list-id')
+              switchList(list_id)
+            }
+          }
+
+          // リストを削除する
+          target_list.animate(
+            {'opacity':'0'}
+          ).slideUp(function() { $(this).remove(); });
+        })
+      })
+
+      // cookieのinitial_list_idのリストか、最初に作ったリストを表示する
+      switchList('{{ initial_list_id }}')
+      // リストの切り替え
+      $('#lists').on('click', '.list', function() {
+        let list_id = $(this).data('list-id')
+        switchList(list_id)
+      })
+      
+      // リストのソート
+      $('#lists').sortable({
+        axis: 'y',
+        tolerance: 'pointer',
+        containment: 'parent',
+        animation: 200,
+        cursor: 'grabbing',
+        update: updateListSort,
+      });
+    })
+    // タスク一覧の切り替え方 リスト名をタップ、リストを追加、現在フォーカスしているリストを削除、
+    let switchList = function(list_id) {
+      $('#task-list .tasks').hide();
+      $(`#task-list .tasks[data-list-id='list-${list_id}']`).show();
+      $('#lists .list').not(`[data-list-id=${list_id}]`).removeClass('focus');
+      let list = $(`#lists .list[data-list-id=${list_id}]`);
+      list.addClass('focus');
+      let name = list.find('span.list-name').text();
+      $('#task-list h2').text(name);
+      document.cookie = `initial_list_id=${list_id}`
+    }
+
+    // ソートが完了すると、Listのsortの値が更新される
+    let updateListSort = function(e, ui) {
+      let li = ui.item;
+      let pk = li.data('list-id');
+      let sort_number = $('ul#lists li.list').index(li);
+      let csrf_token = getCookie("csrftoken");
+      $.ajax({
+        url: "{% url 'sort_list' %}",
+        method: 'POST',
+        data: { 'pk':pk, 'sort_number': sort_number, 'csrfmiddlewaretoken': csrf_token},
+        timeout: 10000,
+        dataType: 'text',
+      })
+    }
+
+    // cookie情報を取得
+    // sourcecode: https://docs.djangoproject.com/ja/3.0/ref/csrf/#ajax
+    function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var cookie = jQuery.trim(cookies[i]);
+          // Does this cookie string begin with the name we want?
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
 {% endblock %}
