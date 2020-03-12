@@ -230,6 +230,28 @@
         timeout: 10000,
         dataType: 'text',
       })
+      .done(function() {
+        // タスク追加フォームのリスト一覧も並び替える
+        let lists = $('ul#lists').children('li')
+        let ids = []
+        lists.each(function(idx, elem) {
+          ids.push($(elem).data('list-id'));
+        })
+        console.log(ids)
+        let options = $('select#add_task_for_list').children('option')
+        let new_options = []
+        $.each(ids, (function(idx, id) {
+          options.each(function(idx, option) {
+            if($(option).val() == id) {
+              console.log($(option).text())
+              new_options.push($(option))
+            }
+          })
+        }));
+        $('select#add_task_for_list').empty()
+        $('select#add_task_for_list').append(new_options)
+        console.log(new_options)
+      });
     }
 
     // cookie情報を取得

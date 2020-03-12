@@ -22,6 +22,13 @@ class TaskForm(forms.ModelForm):
     fields = ('name', 'description', 'deadline', 'list')
 
   def __init__(self, *args, **kwargs):
+    # フォーム作成時、キーワードにuserを追加して、popで取り出す
+    # （継承するとき、余計なキーワードがあると正しく動作しなくなる）
     user = kwargs.pop('user')
     super().__init__(*args, **kwargs)
+
+    # ユーザのリストのみを選択の対象とする
     self.fields['list'].queryset = List.objects.filter(user=user)
+
+    # 空白の選択肢はない
+    self.fields['list'].empty_label = None

@@ -22,7 +22,7 @@ class Task(models.Model):
   deadline = models.DateTimeField(blank=True, null=True,)
   sort = models.IntegerField()
   user = models.ForeignKey(User, on_delete=models.CASCADE)
-  list = models.ForeignKey(List, on_delete=models.CASCADE)
+  list = models.ForeignKey(List, on_delete=models.CASCADE, default=None)
 
   def save(self, *args, **kwargs):
     if not self.pk:

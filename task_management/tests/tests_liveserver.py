@@ -71,7 +71,16 @@ class TaskListTests(StaticLiveServerTestCase):
     after_each_list = lists.find_elements(By.TAG_NAME, 'li')
     for (list, i) in zip(after_each_list, [0,2,3,1,4]):
       self.assertEqual(list.text, 'List ' + str(i + 1))
-      
+
+    # リストのdata-list-idとselect/optionのvalueが一致いしているか検証する
+    after_list_ids = [list.get_attribute('data-list-id') for list in after_each_list]
+
+    # タスク追加フォームのリスト一覧も並び替えられているか検証する
+    select_tags = self.selenium.find_elements_by_xpath("//select[@id='add_task_for_list']/option")
+    select_tags_ids = [option.get_attribute('value') for option in select_tags]
+
+    for (list, option) in zip(after_each_list, select_tags):
+      self.assertEqual(list.get_attribute('data-list-id'), option.get_attribute('value'))
 
     # 更新後も変わっていないか確認する
     self.selenium.refresh()
@@ -349,7 +358,6 @@ class TaskListTests(StaticLiveServerTestCase):
     self.assertEqual(len(before_lists), 0)
     self.assertEqual(len(after_lists), 1)
     self.assertTrue(after_select_tag.is_selected)
-
 
   def test_switch_lists_when_remove_bottom_focused_list(self):
     for i in range(1,6):
